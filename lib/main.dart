@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'audio/loop_audio_player.dart';
+import 'config/legal_config.dart';
+import 'services/external_link.dart';
 import 'services/purchase_service.dart';
 
 const black = Color(0xFF070707);
@@ -139,12 +141,14 @@ class SuperCajonApp extends StatefulWidget {
   State<SuperCajonApp> createState() => _SuperCajonAppState();
 }
 
-class _SuperCajonAppState extends State<SuperCajonApp> {
+class _SuperCajonAppState extends State<SuperCajonApp>
+    with WidgetsBindingObserver {
   late final PurchaseService _purchases;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _purchases = PurchaseService();
     if (widget.initializePurchases && !customerPreview) {
       _purchases.initialize();
@@ -153,8 +157,16 @@ class _SuperCajonAppState extends State<SuperCajonApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _purchases.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_purchases.refreshEntitlement());
+    }
   }
 
   @override
@@ -784,6 +796,321 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
           child: SafeArea(
             top: false,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 34,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const _SheetHandle(),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            tooltip: 'Fechar',
+                            onPressed: () => Navigator.pop(sheetContext),
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Image.asset(
+                    'assets/brand/logo-super-cajon.png',
+                    width: 132,
+                    height: 132,
+                  ),
+                  Text(
+                    purchases.isPremium
+                        ? 'Super Cajon Completo'
+                        : 'Desbloqueie o Super Cajon',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -.7,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    purchases.isPremium
+                        ? 'Todos os ritmos estão disponíveis.'
+                        : 'Assinatura anual com novos loops a cada trimestre.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: grey, fontSize: 13),
+                  ),
+                  const SizedBox(height: 22),
+                  const _PaywallFeature(
+                    icon: Icons.library_music_rounded,
+                    text: 'Todos os 13 ritmos',
+                  ),
+                  const _PaywallFeature(
+                    icon: Icons.speed_rounded,
+                    text: 'Controle de BPM e parada suave',
+                  ),
+                  const _PaywallFeature(
+                    icon: Icons.offline_bolt_rounded,
+                    text: 'Loops disponíveis offline após a validação',
+                  ),
+                  const _PaywallFeature(
+                    icon: Icons.block_rounded,
+                    text: 'Sem anúncios',
+                  ),
+                  const _PaywallFeature(
+                    icon: Icons.update_rounded,
+                    text: 'Novos packs de loops trimestralmente',
+                  ),
+                  if (purchases.message != null && !marketingPreview) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      purchases.message!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: purchases.isPremium
+                            ? yellow
+                            : const Color(0xFFB8B8B8),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton(
+                      onPressed: purchases.isPremium
+                          ? () => Navigator.pop(sheetContext)
+                          : purchases.purchasePending ||
+                                (purchases.product == null && !marketingPreview)
+                          ? null
+                          : customerPreview
+                          ? purchases.previewUnlock
+                          : marketingPreview
+                          ? () {}
+                          : purchases.buyAnnualSubscription,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: yellow,
+                        foregroundColor: black,
+                        disabledBackgroundColor: const Color(0xFF3A3A3A),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(17),
+                        ),
+                      ),
+                      child: purchases.purchasePending
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: yellow,
+                              ),
+                            )
+                          : Text(
+                              purchases.isPremium
+                                  ? 'CONTINUAR'
+                                  : purchases.product == null &&
+                                        !marketingPreview
+                                  ? 'INDISPONÍVEL NO PREVIEW'
+                                  : 'ASSINAR • ${purchases.product?.price ?? 'R\$ 29,99'} / ANO',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: .5,
+                              ),
+                            ),
+                    ),
+                  ),
+                  if (!purchases.isPremium)
+                    TextButton(
+                      onPressed: purchases.purchasePending
+                          ? null
+                          : purchases.restore,
+                      child: const Text(
+                        'Restaurar assinatura',
+                        style: TextStyle(
+                          color: Color(0xFFB0B0B0),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  if (!purchases.isPremium) ...[
+                    const Text(
+                      'Você pode continuar usando Arrocha, Pagode e Xote '
+                      'gratuitamente sem assinar.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: grey, fontSize: 10, height: 1.4),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Renovação automática a cada 12 meses. Cancele quando '
+                      'quiser pela Google Play. O acesso permanece ativo até o '
+                      'fim do período já pago.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: grey, fontSize: 10, height: 1.4),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: _openPrivacyNotice,
+                          child: const Text('Privacidade'),
+                        ),
+                        TextButton(
+                          onPressed: () => _openExternal(
+                            LegalConfig.termsOfUseUrl,
+                            'Não foi possível abrir os termos de uso.',
+                          ),
+                          child: const Text('Termos de uso'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+
+  Future<void> _openExternal(String url, String failureMessage) async {
+    final opened = await openExternalLink(url);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failureMessage)));
+    }
+  }
+
+  void _openPrivacyNotice() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(sheetContext).height * .88,
+      ),
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+      decoration: const BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(top: BorderSide(color: Color(0xFF3A3A3A))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(child: _SheetHandle()),
+              const SizedBox(height: 18),
+              const Text(
+                'Política de Privacidade',
+                style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Última atualização: 13 de julho de 2026',
+                style: TextStyle(color: grey, fontSize: 11),
+              ),
+              const SizedBox(height: 20),
+              _legalParagraph(
+                'Responsável',
+                'O Super Cajon é oferecido por ${LegalConfig.developerName}. '
+                    'Dúvidas sobre privacidade podem ser enviadas para '
+                    '${LegalConfig.supportEmail}.',
+              ),
+              _legalParagraph(
+                'Dados pessoais',
+                'O aplicativo não exige cadastro e não coleta, transmite, '
+                    'vende ou compartilha dados pessoais ou dados sensíveis '
+                    'com o desenvolvedor. Não utilizamos anúncios nem serviços '
+                    'de análise de comportamento.',
+              ),
+              _legalParagraph(
+                'Assinatura Google Play',
+                'A compra e a administração da assinatura são processadas '
+                    'pela Google Play. O aplicativo recebe apenas o estado e '
+                    'um token técnico da compra para liberar o conteúdo. Dados '
+                    'de pagamento não são recebidos nem armazenados pelo '
+                    'desenvolvedor.',
+              ),
+              _legalParagraph(
+                'Armazenamento local',
+                'O aplicativo guarda no dispositivo somente o estado da '
+                    'assinatura e a data da última validação. Essas informações '
+                    'podem ser removidas apagando os dados do aplicativo ou '
+                    'desinstalando-o.',
+              ),
+              _legalParagraph(
+                'Público-alvo',
+                'A faixa etária declarada para o aplicativo é: '
+                    '${LegalConfig.minimumTargetAge}. O conteúdo é adequado ao '
+                    'público geral e familiar, mas não é direcionado '
+                    'especificamente a crianças menores de 13 anos. O app não '
+                    'possui comunicação entre usuários nem conteúdo gerado por '
+                    'eles.',
+              ),
+              _legalParagraph(
+                'Segurança e alterações',
+                'Aplicamos minimização de dados e podemos atualizar esta '
+                    'política quando o funcionamento do app mudar. A versão '
+                    'vigente estará disponível no aplicativo e no endereço '
+                    'público informado na Google Play.',
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => _openExternal(
+                    LegalConfig.privacyPolicyUrl,
+                    'Não foi possível abrir a política de privacidade.',
+                  ),
+                  child: const Text('ABRIR VERSÃO ONLINE'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _legalParagraph(String title, String body) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        Text(
+          body,
+          style: const TextStyle(color: Color(0xFFC7C7C7), height: 1.45),
+        ),
+      ],
+    ),
+  );
+
+  void _openSettings() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => StatefulBuilder(
+      builder: (context, setSheetState) => Container(
+        padding: const EdgeInsets.fromLTRB(22, 10, 22, 28),
+        decoration: const BoxDecoration(
+          color: panel,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: Color(0xFF3A3A3A))),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -796,260 +1123,176 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Image.asset(
-                  'assets/brand/logo-super-cajon.png',
-                  width: 132,
-                  height: 132,
-                ),
-                Text(
-                  purchases.isPremium
-                      ? 'Super Cajon Completo'
-                      : 'Desbloqueie o Super Cajon',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -.7,
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Ajustes',
+                    style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900),
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  purchases.isPremium
-                      ? 'Todos os ritmos estão disponíveis.'
-                      : 'Uma única compra. Cajón pronto para qualquer palco.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: grey, fontSize: 13),
-                ),
-                const SizedBox(height: 22),
-                const _PaywallFeature(
-                  icon: Icons.library_music_rounded,
-                  text: 'Todos os 13 ritmos',
-                ),
-                const _PaywallFeature(
-                  icon: Icons.speed_rounded,
-                  text: 'Controle de BPM e parada suave',
-                ),
-                const _PaywallFeature(
-                  icon: Icons.offline_bolt_rounded,
-                  text: 'Funciona totalmente offline',
-                ),
-                const _PaywallFeature(
-                  icon: Icons.block_rounded,
-                  text: 'Sem anúncios e sem assinatura',
-                ),
-                if (purchases.message != null && !marketingPreview) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    purchases.message!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: purchases.isPremium
-                          ? yellow
-                          : const Color(0xFFB8B8B8),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: FilledButton(
-                    onPressed: purchases.isPremium
-                        ? () => Navigator.pop(sheetContext)
-                        : purchases.purchasePending ||
-                              (purchases.product == null && !marketingPreview)
-                        ? null
-                        : customerPreview
-                        ? purchases.previewUnlock
-                        : marketingPreview
-                        ? () {}
-                        : purchases.buyFullUnlock,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: yellow,
-                      foregroundColor: black,
-                      disabledBackgroundColor: const Color(0xFF3A3A3A),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(17),
+                const Divider(height: 30, color: Color(0xFF333333)),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Volume',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            'Saída geral dos loops',
+                            style: TextStyle(color: grey, fontSize: 11),
+                          ),
+                        ],
                       ),
                     ),
-                    child: purchases.purchasePending
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: yellow,
-                            ),
-                          )
-                        : Text(
-                            purchases.isPremium
-                                ? 'CONTINUAR'
-                                : purchases.product == null && !marketingPreview
-                                ? 'INDISPONÍVEL NO PREVIEW'
-                                : 'DESBLOQUEAR • ${purchases.product?.price ?? 'R\$ 29,99'}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: .5,
-                            ),
-                          ),
+                    SizedBox(
+                      width: 150,
+                      child: Slider(
+                        value: _volume,
+                        activeColor: blue,
+                        onChanged: (value) {
+                          setState(() => _volume = value);
+                          setSheetState(() {});
+                          _player.setVolume(value);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(color: Color(0xFF333333)),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _fadeStop,
+                  activeTrackColor: yellow,
+                  title: const Text(
+                    'Parada suave',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: const Text(
+                    'Fade ao pausar',
+                    style: TextStyle(color: grey, fontSize: 11),
+                  ),
+                  onChanged: (value) {
+                    setState(() => _fadeStop = value);
+                    setSheetState(() {});
+                  },
+                ),
+                const Divider(color: Color(0xFF333333)),
+                AnimatedBuilder(
+                  animation: widget.purchases,
+                  builder: (context, child) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      widget.purchases.isPremium
+                          ? Icons.verified_rounded
+                          : Icons.workspace_premium_rounded,
+                      color: widget.purchases.isPremium ? yellow : blue,
+                    ),
+                    title: Text(
+                      widget.purchases.isPremium
+                          ? 'Super Cajon Completo'
+                          : 'Desbloquear versão completa',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Text(
+                      widget.purchases.isPremium
+                          ? 'Assinatura anual ativa'
+                          : 'R\$ 29,99 por ano',
+                      style: const TextStyle(color: grey, fontSize: 11),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Future<void>.delayed(
+                        const Duration(milliseconds: 180),
+                        _openPaywall,
+                      );
+                    },
                   ),
                 ),
-                if (!purchases.isPremium)
-                  TextButton(
-                    onPressed: purchases.purchasePending
-                        ? null
-                        : purchases.restore,
-                    child: const Text(
-                      'Restaurar compra',
-                      style: TextStyle(color: Color(0xFFB0B0B0), fontSize: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.manage_accounts_rounded,
+                    color: blue,
+                  ),
+                  title: const Text(
+                    'Gerenciar assinatura',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: const Text(
+                    'Renovar ou cancelar pela Google Play',
+                    style: TextStyle(color: grey, fontSize: 11),
+                  ),
+                  trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                  onTap: () => _openExternal(
+                    LegalConfig.subscriptionManagementUrl,
+                    'Não foi possível abrir a Google Play.',
+                  ),
+                ),
+                const Divider(color: Color(0xFF333333)),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.privacy_tip_rounded, color: blue),
+                  title: const Text(
+                    'Política de privacidade',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: _openPrivacyNotice,
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.description_rounded, color: blue),
+                  title: const Text(
+                    'Termos de uso',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                  onTap: () => _openExternal(
+                    LegalConfig.termsOfUseUrl,
+                    'Não foi possível abrir os termos de uso.',
+                  ),
+                ),
+                if (customerPreview && widget.purchases.isPremium)
+                  TextButton.icon(
+                    onPressed: widget.purchases.previewLock,
+                    icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                    label: const Text('Resetar demonstração do paywall'),
+                    style: TextButton.styleFrom(foregroundColor: blue),
+                  ),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: Text(
+                      '✓  Os loops funcionam offline entre validações periódicas.',
+                      style: TextStyle(color: grey, fontSize: 11),
                     ),
                   ),
+                ),
               ],
             ),
           ),
-        );
-      },
-    ),
-  );
-
-  void _openSettings() => showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (_) => StatefulBuilder(
-      builder: (context, setSheetState) => Container(
-        padding: const EdgeInsets.fromLTRB(22, 10, 22, 28),
-        decoration: const BoxDecoration(
-          color: panel,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(top: BorderSide(color: Color(0xFF3A3A3A))),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF444444),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Ajustes',
-                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900),
-                ),
-              ),
-              const Divider(height: 30, color: Color(0xFF333333)),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Volume',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        Text(
-                          'Saída geral dos loops',
-                          style: TextStyle(color: grey, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: 150,
-                    child: Slider(
-                      value: _volume,
-                      activeColor: blue,
-                      onChanged: (value) {
-                        setState(() => _volume = value);
-                        setSheetState(() {});
-                        _player.setVolume(value);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(color: Color(0xFF333333)),
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                value: _fadeStop,
-                activeTrackColor: yellow,
-                title: const Text(
-                  'Parada suave',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                subtitle: const Text(
-                  'Fade ao pausar',
-                  style: TextStyle(color: grey, fontSize: 11),
-                ),
-                onChanged: (value) {
-                  setState(() => _fadeStop = value);
-                  setSheetState(() {});
-                },
-              ),
-              const Divider(color: Color(0xFF333333)),
-              AnimatedBuilder(
-                animation: widget.purchases,
-                builder: (context, child) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    widget.purchases.isPremium
-                        ? Icons.verified_rounded
-                        : Icons.workspace_premium_rounded,
-                    color: widget.purchases.isPremium ? yellow : blue,
-                  ),
-                  title: Text(
-                    widget.purchases.isPremium
-                        ? 'Super Cajon Completo'
-                        : 'Desbloquear versão completa',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  subtitle: Text(
-                    widget.purchases.isPremium
-                        ? 'Todos os ritmos liberados'
-                        : 'Compra única, sem assinatura',
-                    style: const TextStyle(color: grey, fontSize: 11),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Future<void>.delayed(
-                      const Duration(milliseconds: 180),
-                      _openPaywall,
-                    );
-                  },
-                ),
-              ),
-              if (customerPreview && widget.purchases.isPremium)
-                TextButton.icon(
-                  onPressed: widget.purchases.previewLock,
-                  icon: const Icon(Icons.restart_alt_rounded, size: 18),
-                  label: const Text('Resetar demonstração do paywall'),
-                  style: TextButton.styleFrom(foregroundColor: blue),
-                ),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Text(
-                    '✓  Todos os ritmos ficam disponíveis offline.',
-                    style: TextStyle(color: grey, fontSize: 11),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
+    ),
+  );
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 42,
+    height: 4,
+    decoration: BoxDecoration(
+      color: const Color(0xFF444444),
+      borderRadius: BorderRadius.circular(10),
     ),
   );
 }

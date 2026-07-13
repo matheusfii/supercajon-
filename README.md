@@ -43,10 +43,11 @@ O player usa `just_audio`, reprodução contínua, ajuste de BPM, volume, troca 
 
 ## Monetização Android
 
-O aplicativo oferece Arrocha, Pagode e Xote gratuitamente. Os demais ritmos
-são liberados pela compra única `super_cajon_full_unlock`, usando Google Play
-Billing. A configuração necessária no Play Console está descrita em
-`docs/PLAY_STORE_SETUP.md`.
+O aplicativo oferece Arrocha, Pagode e Xote gratuitamente. Os demais ritmos e
+os novos packs trimestrais são liberados pela assinatura anual
+`super_cajon_pro`, usando Google Play Billing. O preço-base no Brasil é
+R$ 29,99 por ano. A configuração e o checklist de conformidade estão descritos
+em `docs/PLAY_STORE_SETUP.md`.
 
 ### Testar a jornada do cliente sem cobrança
 
@@ -54,8 +55,8 @@ Billing. A configuração necessária no Play Console está descrita em
 flutter run -d chrome --dart-define=CUSTOMER_PREVIEW=true
 ```
 
-Nesse modo, tocar em qualquer ritmo bloqueado abre o paywall com o preço de
-R$ 29,99. O botão de compra simula o desbloqueio, sem acessar a Google Play. Nos
+Nesse modo, tocar em qualquer ritmo bloqueado abre o paywall da assinatura
+anual por R$ 29,99. O botão simula a ativação, sem acessar a Google Play. Nos
 ajustes, use **Resetar demonstração do paywall** para repetir o fluxo. Essa
 simulação só é ativada quando a flag acima é informada e não afeta o build de
 produção.

@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   just_audio: ^0.10.6
   in_app_purchase: ^3.3.0
+  in_app_purchase_android: ^0.5.1
   shared_preferences: ^2.5.5
   web: ^1.1.1
 
