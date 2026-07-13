@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --card-cols: 5; }
+
+        /* Base Tahoe Glassmorphism */
+        body { background: linear-gradient(135deg, rgba(15,15,20,0.95), rgba(25,25,35,0.95)); backdrop-filter: blur(40px); color: white; height: 100vh; margin: 0; overflow: hidden; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .drag-area { -webkit-app-region: drag; } .no-drag { -webkit-app-region: no-drag; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        .glass-btn { background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%); border-top: 1px solid rgba(255,255,255,0.2); border-bottom: 1px solid rgba(0,0,0,0.5); }
+        
+        .grid-container { display: grid; gap: 1.25rem; transition: all 0.3s ease; }
+        .view-grid { grid-template-columns: repeat(var(--card-cols), minmax(0, 1fr)); }
+        .view-list { grid-template-columns: 1fr !important; }
+
+        /* Rainbow Glow Atualizado para Glassmorphism */
+        @keyframes rainbow-glow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .rainbow-active { position: relative; z-index: 10; transform: scale(1.02); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .rainbow-active::before { content: ''; position: absolute; inset: -3px; border-radius: inherit; background: linear-gradient(45deg, rgba(59,130,246,0.9), rgba(168,85,247,0.9), rgba(236,72,153,0.9), rgba(59,130,246,0.9)); background-size: 300%; z-index: -1; animation: rainbow-glow 3s linear infinite; filter: blur(4px); opacity: 0.8; }
+        .rainbow-active::after { content: ''; position: absolute; inset: 0; border-radius: inherit; border: 2px solid rgba(255,255,255,0.6); z-index: 2; pointer-events: none; }
+        
+        @keyframes bounce-icon { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-bounce-icon { animation: bounce-icon 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-block; }
+        
+        #visualizer-bar { background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #ef4444, #eab308, #3b82f6); background-size: 200%; animation: rainbow-glow 2s linear infinite; transition: height 0.05s ease-out, opacity 0.2s ease; }
+        
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range] { -webkit-appearance: none; background: rgba(255,255,255,0.1); border-radius: 5px; outline: none; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .pulse-overlay { animation: pulse-ring 2s infinite; }
+        @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+    </style>
+</head>
+<body class="flex flex-col select-none">
+    
+    <div class="drag-area w-full h-12 flex items-center px-4 justify-between bg-black/20 border-b border-white/5 relative z-50">
+        <div class="w-20 no-drag"></div> <div class="flex justify-end items-center gap-5 no-drag w-full">
+            <div class="flex items-center gap-3">
+                <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Tamanho</span>
+                <input type="range" min="2" max="8" value="5" id="sizeSlider" oninput="ajustarTamanhoGrid(this.value)" class="w-24 h-1 appearance-none">
+            </div>
+            <button id="toggleLayout" onclick="alternarLayout()" class="glass-btn px-4 py-1.5 rounded-lg text-[10px] font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center gap-2">
+                <span id="layoutIcon">≣</span> LISTA
+            </button>
+            <button onclick="abrirConfiguracoes()" class="glass-btn w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all ml-2" title="Mapeamento de Teclado">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-grow overflow-y-auto p-8 no-drag space-y-8 pb-72 relative">
+        <div class="flex flex-col items-center mb-8">
+            <div id="logoContainer" class="w-[400px] h-[400px] flex items-center justify-center overflow-hidden">
+                <h1 class="text-5xl font-black italic tracking-tighter text-white/90 uppercase drop-shadow-2xl">Super Cajón</h1>
+            </div>
+            <div class="h-1.5 w-24 bg-blue-500 rounded-full mt-4 shadow-[0_0_20px_rgba(59,130,246,0.6)]"></div>
+        </div>
+
+        <div id="section-padrao">
+            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Biblioteca Padrão</h2>
+            <div id="grid-padrao" class="grid-container view-grid"></div>
+        </div>
+        <div id="section-custom">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-purple-500"></div> Minhas Tracks</h2>
+                <button onclick="abrirModalAdicionar()" class="text-[10px] glass-btn px-4 py-2 rounded-xl text-white font-bold hover:bg-white/10 active:scale-95 transition-all shadow-md">+ ADICIONAR RITMO</button>
+            </div>
+            <div id="grid-custom" class="grid-container view-grid"></div>
+        </div>
+    </div>
+
+    <div class="no-drag glass-panel absolute bottom-28 left-6 right-6 p-5 rounded-[2rem] flex items-center justify-between z-40 backdrop-blur-3xl bg-black/75 border border-white/20 shadow-2xl">
+        <div class="flex items-center gap-4 w-1/3">
+            <div class="flex flex-col"><span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">VELOCIDADE</span><span id="speedDisplay" class="text-blue-400 font-mono text-xs font-bold">1.00x</span></div>
+            <button onclick="passoVelocidade(-0.01)" class="w-8 h-8 glass-btn rounded-lg text-lg font-bold hover:bg-white/10 active:scale-95 transition-all">-</button>
+            <input type="range" min="0.7" max="1.6" step="0.01" value="1.0" id="speedSlider" oninput="ajustarVelocidade(this.value, false)" class="w-24 h-1 appearance-none">
+            <button onclick="passoVelocidade(0.01)" class="w-8 h-8 glass-btn rounded-lg text-lg font-bold hover:bg-white/10 active:scale-95 transition-all">+</button>
+            <button onclick="resetVelocidade()" class="text-[9px] font-bold glass-btn px-2 py-2 rounded-lg text-blue-400 active:scale-95 transition-all">RST</button>
+        </div>
+
+        <div class="flex gap-4 justify-center items-center w-1/3">
+            <button onclick="navegar(-1)" class="w-12 h-12 glass-btn rounded-2xl text-xl hover:bg-white/10 active:scale-95 flex items-center justify-center">⏮</button>
+            <button onclick="togglePlayStop()" class="w-16 h-16 bg-blue-600 hover:bg-blue-500 rounded-2xl text-2xl shadow-lg border-t border-blue-400 active:scale-95 flex items-center justify-center text-white transition-all duration-500 shadow-[0_0_20px_rgba(59,130,246,0.6)]" id="btnPlay">
+                <span id="playIcon">▶</span>
+            </button>
+            <button onclick="navegar(1)" class="w-12 h-12 glass-btn rounded-2xl text-xl hover:bg-white/10 active:scale-95 flex items-center justify-center">⏭</button>
+        </div>
+
+        <div class="flex items-center justify-end w-1/3 gap-4" id="volWrapper">
+            <div class="relative">
+                <button onclick="toggleVolume()" class="w-12 h-12 glass-btn rounded-2xl flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                </button>
+                <div id="volumeContainer" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 hidden bg-black/80 backdrop-blur-xl border border-white/10 w-12 h-36 rounded-2xl shadow-2xl z-50 flex items-center justify-center fade-in">
+                    <input type="range" min="0" max="1" step="0.01" value="1.0" id="volSliderUi" class="w-24 h-1 appearance-none -rotate-90 origin-center" oninput="ajustarVolume(this.value)">
+                </div>
+            </div>
+            <button onclick="hardStop()" class="w-12 h-12 bg-yellow-500/20 hover:bg-yellow-500/40 border border-yellow-500/50 text-yellow-400 rounded-2xl flex items-center justify-center font-bold text-xl active:scale-95 shadow-[0_0_15px_rgba(234,179,8,0.3)]" title="Parar Bruscamente (Atalho P)">!</button>
+        </div>
+    </div>
+
+    <div id="visualizer-bar" class="w-full h-[3px] opacity-0 fixed bottom-16 left-0 z-50 pointer-events-none transition-all flex items-end justify-center">
+        <span id="ritmoNome" class="text-[11px] font-black tracking-widest text-white drop-shadow-md uppercase absolute bottom-full mb-3 bg-black/60 px-4 py-1.5 rounded-full border border-white/10 backdrop-blur-md"></span>
+    </div>
+
+    <div class="absolute bottom-5 w-full flex justify-center pointer-events-none z-30">
+        <div class="flex flex-row items-center gap-8 bg-black/60 backdrop-blur-xl border border-white/10 px-8 py-2.5 rounded-full shadow-2xl opacity-[0.85] hover:opacity-100 transition-opacity pointer-events-auto">
+            <span class="text-[11px] text-gray-300 font-bold uppercase tracking-widest drop-shadow-md">Desenvolvido por Matheus Fonseca</span>
+            <div class="flex gap-6 no-drag">
+                <a href="#" onclick="require('electron').shell.openExternal('https://instagram.com/omatheusfonseca')" class="flex items-center gap-2 text-white/80 hover:text-white transition-colors text-[11px] font-bold text-blue-400">Instagram</a>
+                <a href="#" onclick="require('electron').shell.openExternal('https://www.youtube.com/channel/UC0TRKxC9a23F6CWf05pbUrA')" class="flex items-center gap-2 text-white/80 hover:text-white transition-colors text-[11px] font-bold text-red-500">YouTube</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalMappingOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden items-center justify-center fade-in no-drag">
+        <div class="glass-panel p-10 rounded-3xl flex flex-col items-center text-center border border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.3)] min-w-[350px]">
+            <div class="pulse-overlay w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(59,130,246,0.8)]">
+                <span class="text-3xl text-white">⌨️</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Aguardando Comando...</h3>
+            <p class="text-sm text-gray-300 mb-6">Pressione uma tecla para mapear:<br>
+            <span id="mappingFunctionName" class="text-xl font-black text-blue-400 mt-3 block uppercase tracking-widest"></span></p>
+            <button onclick="cancelarMapeamento()" class="px-8 py-2 rounded-xl glass-btn text-sm font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all border border-white/20">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modalConfig" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] hidden items-center justify-center no-drag fade-in">
+        <div class="glass-panel bg-gray-900/95 w-96 max-h-[85vh] p-6 rounded-3xl flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <h3 class="text-xl font-black italic text-white tracking-tighter flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    Atalhos do Teclado
+                </h3>
+            </div>
+            <div id="kbList" class="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-grow text-sm opacity-90"></div>
+            <div class="mt-6 flex justify-between gap-3 pt-4 border-t border-white/10">
+                <button onclick="resetarMapeamentos()" class="py-2 px-4 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all">Restaurar Padrões</button>
+                <button onclick="fecharConfiguracoes()" class="py-2 px-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-bold text-white shadow-lg active:scale-95 transition-all">Concluir</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalRitmo" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden items-center justify-center no-drag fade-in">
+        <div class="glass-panel bg-gray-900/95 w-96 p-6 rounded-3xl flex flex-col gap-4 border border-white/20 shadow-2xl">
+            <h3 id="modalTitle" class="text-xl font-black italic text-white mb-2 tracking-tighter border-b border-white/10 pb-2">Novo Ritmo</h3>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Nome do Ritmo</label>
+                <input type="text" id="inputNome" class="bg-black/50 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all font-semibold">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Imagem de Capa (Opcional)</label>
+                <div class="h-28 border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-white/40 transition-all cursor-pointer relative overflow-hidden group" onclick="document.getElementById('fileCapa').click()">
+                    <span class="text-xs text-gray-400 font-semibold group-hover:text-white transition-colors pointer-events-none" id="labelCapa">Selecionar imagem</span>
+                    <img id="previewCapa" class="absolute inset-0 w-full h-full object-cover hidden">
+                    <input type="file" id="fileCapa" class="hidden" accept="image/*" onchange="previewImage(this)">
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Áudio (.wav ou .mp3)</label>
+                <div class="h-20 border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center hover:bg-white/10 hover:border-white/40 transition-all cursor-pointer group bg-blue-500/5" onclick="document.getElementById('fileAudio').click()">
+                    <span class="text-xs text-blue-400 font-bold group-hover:text-blue-300 transition-colors truncate px-4" id="labelAudio">Selecionar Áudio de Loop</span>
+                    <input type="file" id="fileAudio" class="hidden" accept="audio/*" onchange="handleAudioSelect(this)">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4 pt-2 border-t border-white/10">
+                <button onclick="fecharModal()" class="flex-1 py-3 rounded-xl glass-btn text-sm font-bold hover:bg-white/10 active:scale-95 transition-all text-gray-300">Cancelar</button>
+                <button onclick="salvarRitmo()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-bold border-t border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)] active:scale-95 transition-all text-white">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="contextMenu" class="fixed bg-gray-800/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-xl w-44 overflow-hidden z-[110] hidden flex flex-col no-drag text-sm fade-in">
+        <button onclick="iniciarEdicao()" class="px-4 py-3 text-left hover:bg-white/10 text-white font-semibold transition-all flex items-center gap-3"><span>✎</span> Editar Ritmo</button>
+        <div class="h-[1px] bg-white/10 mx-2"></div>
+        <button onclick="excluirRitmo()" class="px-4 py-3 text-left hover:bg-red-500/20 text-red-400 font-semibold transition-all flex items-center gap-3"><span>🗑</span> Excluir</button>
+    </div>
+
+    <script>
+        const fs = require('fs'); const path = require('path'); const os = require('os'); const { ipcRenderer } = require('electron');
+        
+        // --- CAMINHOS E PASTAS ---
+        const baseDir = path.join(os.homedir(), 'Music', 'SuperCajon');
+        const dirs = { logo: path.join(baseDir, 'logo'), audio: path.join(baseDir, 'audio'), userAudio: path.join(baseDir, 'audio', 'user_audios'), images: path.join(baseDir, 'images'), userImages: path.join(baseDir, 'images', 'user_images') };
+        const dataFile = path.join(baseDir, 'data.json');
+        const settingsFile = path.join(baseDir, 'settings.json');
+
+        Object.values(dirs).forEach(dir => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); });
+        if (!fs.existsSync(dataFile)) { fs.writeFileSync(dataFile, JSON.stringify([])); }
+
+        // --- VARIÁVEIS GLOBAIS ---
+        let audio = new Audio(); audio.loop = true; let userVolume = 1.0;
+        let audioCtx, analyser, gainNode, visualizerId = null;
+        let ritmosCustomizados = [], todasTracks = [], indiceAtual = -1;
+        let currentLayout = 'grid', isFadeOut = false, fadeOutInterval = null;
+        let idEdicao = null, contextTargetId = null, listeningKeyAction = null;
+
+        const ritmosPadrao = ["Arrocha", "Arrocha Rápido", "Vanera", "Bachata", "Guarânia", "Pagode", "Pagode Rápido", "Axé Lento", "Axé Rápido", "Pop Rock", "Pop Rock 2", "Xote", "Reggae"];
+        const nomeFuncoes = { playStop: 'Play / Stop (Fade)', speedUp: 'Aumentar Vel.', speedDown: 'Diminuir Vel.', volUp: 'Volume +', volDown: 'Volume -', next: 'Próximo Ritmo', prev: 'Ritmo Anterior', panic: 'Pânico (Hard Stop)' };
+
+        // --- MAPEAMENTO DE TECLADO ---
+        let settings = { keyboard: { playStop: 'Space', speedDown: 'ArrowDown', speedUp: 'ArrowUp', volDown: 'Minus', volUp: 'Equal', prev: 'ArrowLeft', next: 'ArrowRight', panic: 'KeyP' } };
+
+        function formatarTecla(code) { return code.replace('Key', '').replace('Arrow', 'Seta ').replace('Digit', 'Nº '); }
+
+        function carregarConfiguracoes() { 
+            if (fs.existsSync(settingsFile)) { 
+                try { const loaded = JSON.parse(fs.readFileSync(settingsFile, 'utf8')); settings.keyboard = { ...settings.keyboard, ...(loaded.keyboard || {}) }; } catch(e) {} 
+            } else { salvarConfiguracoes(); } 
+        }
+        function salvarConfiguracoes() { fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2)); }
+
+        function atualizarUiMapeamento() {
+            const kbL = document.getElementById('kbList'); kbL.innerHTML = '';
+            for (let a in settings.keyboard) { 
+                kbL.innerHTML += `<div class="flex justify-between items-center p-2 rounded-lg hover:bg-white/5 transition-all"><span class="text-xs ${a==='panic'?'text-yellow-400':(a==='playStop'?'text-blue-400':'text-gray-300')} font-semibold">${nomeFuncoes[a]}</span><button onclick="iniciarMapeamentoTeclado('${a}', '${nomeFuncoes[a]}')" class="glass-btn px-3 py-1 rounded-md text-[10px] font-bold hover:bg-blue-600 hover:text-white transition-colors border border-white/10">${formatarTecla(settings.keyboard[a])}</button></div>`; 
+            }
+        }
+
+        function abrirConfiguracoes() { carregarConfiguracoes(); atualizarUiMapeamento(); document.getElementById('modalConfig').classList.remove('hidden'); document.getElementById('modalConfig').classList.add('flex'); }
+        function fecharConfiguracoes() { cancelarMapeamento(); document.getElementById('modalConfig').classList.add('hidden'); document.getElementById('modalConfig').classList.remove('flex'); }
+        function resetarMapeamentos() { settings.keyboard = { playStop: 'Space', speedDown: 'ArrowDown', speedUp: 'ArrowUp', volDown: 'Minus', volUp: 'Equal', prev: 'ArrowLeft', next: 'ArrowRight', panic: 'KeyP' }; salvarConfiguracoes(); atualizarUiMapeamento(); }
+
+        function iniciarMapeamentoTeclado(action, nomeDisplay) { 
+            document.getElementById('mappingFunctionName').innerText = nomeDisplay;
+            document.getElementById('modalMappingOverlay').classList.remove('hidden'); document.getElementById('modalMappingOverlay').classList.add('flex');
+            setTimeout(() => { listeningKeyAction = action; }, 200);
+        }
+
+        function cancelarMapeamento() { 
+            listeningKeyAction = null; 
+            document.getElementById('modalMappingOverlay').classList.add('hidden'); document.getElementById('modalMappingOverlay').classList.remove('flex'); 
+            atualizarUiMapeamento(); 
+        }
+
+        // --- INTERFACE GERAL E ÍCONES ---
+        function ajustarTamanhoGrid(val) { document.documentElement.style.setProperty('--card-cols', 10 - val); }
+        function alternarLayout() {
+            currentLayout = currentLayout === 'grid' ? 'list' : 'grid';
+            document.getElementById('toggleLayout').innerHTML = currentLayout === 'grid' ? '<span id="layoutIcon">≣</span> LISTA' : '<span id="layoutIcon">⊞</span> ÍCONES';
+            carregarBiblioteca();
+        }
+
+        const iconCajonSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-white/20 mb-4 group-hover:text-white/40 transition-colors"><path d="M4 6h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M4 6l4-4h8l4 4"/><circle cx="12" cy="14" r="3"/><path d="M12 11v6"/></svg>`;
+        const iconCajonMiniSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white/50"><path d="M4 6h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M4 6l4-4h8l4 4"/><circle cx="12" cy="14" r="3"/><path d="M12 11v6"/></svg>`;
+
+        // --- MOTOR DE ÁUDIO ---
+        function initEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser(); gainNode = audioCtx.createGain();
+                const source = audioCtx.createMediaElementSource(audio);
+                source.connect(gainNode); gainNode.connect(analyser); analyser.connect(audioCtx.destination);
+                analyser.fftSize = 64; gainNode.gain.value = userVolume;
+            }
+        }
+
+        function ajustarVolume(val) {
+            if (isFadeOut) return;
+            userVolume = Math.min(1, Math.max(0, parseFloat(val)));
+            if(gainNode) gainNode.gain.value = userVolume;
+            document.getElementById('volSliderUi').value = userVolume;
+        }
+
+        function ajustarVelocidade(v, b) {
+            let val = parseFloat(v);
+            if(!b && val > 0.97 && val < 1.03) val = 1.0;
+            if(val < 0.7) val = 0.7; if(val > 1.6) val = 1.6;
+            audio.playbackRate = val;
+            document.getElementById('speedDisplay').innerText = val.toFixed(2) + "x";
+            document.getElementById('speedSlider').value = val;
+        }
+        function passoVelocidade(d) { ajustarVelocidade(audio.playbackRate + d, true); }
+        function resetVelocidade() { ajustarVelocidade(1.0, true); }
+
+        function setPlayButtonState(p) {
+            const btn = document.getElementById('btnPlay'), icon = document.getElementById('playIcon');
+            icon.classList.remove('animate-bounce-icon'); void icon.offsetWidth; icon.classList.add('animate-bounce-icon');
+            icon.innerText = p ? "■" : "▶";
+            btn.style.backgroundColor = p ? "#dc2626" : "#2563eb";
+            if(p) startVis(); else stopVis();
+        }
+
+        function startVis() {
+            if(visualizerId) return;
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            const frame = () => {
+                visualizerId = requestAnimationFrame(frame); analyser.getByteFrequencyData(data);
+                let s = 0; for(let i=0; i<4; i++) s += data[i];
+                document.getElementById('visualizer-bar').style.height = `${Math.max(3, (s/4/255)*25)}px`;
+                document.getElementById('visualizer-bar').style.opacity = '1';
+            }; frame();
+        }
+        function stopVis() { cancelAnimationFrame(visualizerId); visualizerId = null; document.getElementById('visualizer-bar').style.height = '0px'; }
+
+        function hardStop() {
+            if (fadeOutInterval) clearInterval(fadeOutInterval);
+            isFadeOut = false; audio.pause(); audio.currentTime = 0;
+            if(gainNode) gainNode.gain.value = userVolume;
+            setPlayButtonState(false); indiceAtual = -1;
+            document.getElementById('ritmoNome').innerText = ""; atualizarHighlight();
+        }
+
+        function stopAudioFadeOut() {
+            if (isFadeOut || audio.paused) return;
+            isFadeOut = true; setPlayButtonState(false);
+            let startV = gainNode ? gainNode.gain.value : audio.volume;
+            let startT = Date.now();
+            fadeOutInterval = setInterval(() => {
+                let prog = (Date.now() - startT) / 1500;
+                if (prog >= 1) { hardStop(); } else {
+                    let curV = startV * (1 - prog);
+                    if(gainNode) gainNode.gain.value = curV; else audio.volume = curV;
+                }
+            }, 30);
+        }
+
+        function togglePlayStop() {
+            initEngine(); if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (indiceAtual === -1) { if (todasTracks.length > 0) tocarRitmo(0); }
+            else if (audio.paused || isFadeOut) {
+                if (fadeOutInterval) clearInterval(fadeOutInterval);
+                isFadeOut = false; if(gainNode) gainNode.gain.value = userVolume;
+                audio.play(); setPlayButtonState(true);
+            } else { stopAudioFadeOut(); }
+        }
+
+        function tocarRitmo(idx) {
+            initEngine(); if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (indiceAtual === idx) { togglePlayStop(); return; }
+            if (fadeOutInterval) clearInterval(fadeOutInterval);
+            isFadeOut = false; audio.pause(); audio.currentTime = 0;
+            if(gainNode) gainNode.gain.value = userVolume;
+            indiceAtual = idx; const t = todasTracks[idx];
+            if(t && t.audio && fs.existsSync(t.audio)) {
+                audio.src = `file://${t.audio}`;
+                audio.play(); setPlayButtonState(true);
+                document.getElementById('ritmoNome').innerText = t.nome;
+            }
+            atualizarHighlight();
+        }
+
+        function navegar(d) { if (todasTracks.length > 0) tocarRitmo((indiceAtual + d + todasTracks.length) % todasTracks.length); }
+        function atualizarHighlight() { 
+            document.querySelectorAll('[id^="card-"]').forEach(c => c.classList.remove('rainbow-active')); 
+            const a = document.getElementById(`card-${indiceAtual}`); if(a) a.classList.add('rainbow-active'); 
+        }
+
+        // --- BIBLIOTECA, GRID E LISTA ---
+        function normalizar(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_'); }
+        function findFileSafe(dir, name) {
+            if (!fs.existsSync(dir)) return null;
+            const target = normalizar(name);
+            const match = fs.readdirSync(dir).find(f => normalizar(path.parse(f).name) === target);
+            return match ? path.join(dir, match).replace(/\\/g, '/') : null;
+        }
+
+        function carregarDados() { if (fs.existsSync(dataFile)) { try { ritmosCustomizados = JSON.parse(fs.readFileSync(dataFile, 'utf8')); } catch(e) {} } }
+        function salvarDados() { fs.writeFileSync(dataFile, JSON.stringify(ritmosCustomizados, null, 2)); }
+
+        function carregarBiblioteca() {
+            carregarDados(); carregarConfiguracoes();
+            const gp = document.getElementById('grid-padrao'), gc = document.getElementById('grid-custom');
+            gp.innerHTML = ''; gc.innerHTML = ''; todasTracks = [];
+            
+            ritmosPadrao.forEach((n) => {
+                const a = findFileSafe(dirs.audio, n); const c = findFileSafe(dirs.images, n + '_img');
+                todasTracks.push({ nome: n, audio: a, capa: c });
+                gp.appendChild(criarCard(n, c, todasTracks.length-1, false));
+            });
+            
+            ritmosCustomizados.forEach((r, idxBanco) => { 
+                todasTracks.push(r); 
+                gc.appendChild(criarCard(r.nome, r.capa, todasTracks.length-1, true, idxBanco)); 
+            });
+            atualizarHighlight();
+        }
+
+        function criarCard(n, c, idx, isCustom, customId = null) {
+            const card = document.createElement('div'); card.id = `card-${idx}`;
+            if (currentLayout === 'grid') {
+                card.className = "aspect-[4/3] glass-panel rounded-2xl flex flex-col items-center justify-end p-2 cursor-pointer transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group";
+                if (c && fs.existsSync(c)) {
+                    card.style.backgroundImage = `url("file://${c.replace(/\\/g, '/')}")`; card.style.backgroundSize = 'cover'; card.style.backgroundPosition = 'center';
+                    card.innerHTML = `<div class="w-full text-center bg-black/70 backdrop-blur-md rounded-lg p-1.5 z-10 transition-all group-hover:bg-black/90"><span class="text-[10px] font-bold text-white uppercase drop-shadow-md tracking-wide">${n}</span></div>`;
+                } else { 
+                    card.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))';
+                    card.innerHTML = `<div class="absolute inset-0 flex items-center justify-center pointer-events-none">${iconCajonSvg}</div><div class="w-full text-center bg-black/40 backdrop-blur-md rounded-lg p-1.5 z-10 transition-all group-hover:bg-black/60"><span class="text-[10px] font-bold text-white uppercase drop-shadow-md tracking-wide">${n}</span></div>`; 
+                }
+            } else {
+                card.className = "h-[70px] glass-panel rounded-xl flex items-center p-4 cursor-pointer hover:bg-white/10 transition-all group relative overflow-hidden";
+                card.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))';
+                let miniCapa = (c && fs.existsSync(c)) ? `<div class="w-12 h-12 rounded-lg bg-cover bg-center mr-4 shadow-md border border-white/10" style="background-image: url('file://${c.replace(/\\/g, '/')}')"></div>` : `<div class="w-12 h-12 rounded-lg bg-black/40 flex items-center justify-center mr-4 border border-white/5">${iconCajonMiniSvg}</div>`;
+                card.innerHTML = `${miniCapa}<span class="text-xs font-bold uppercase tracking-widest text-white/90 drop-shadow-md flex-grow z-10 pointer-events-none">${n}</span><span class="text-[9px] text-blue-400 font-bold uppercase z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">Tocar ♫</span>`;
+            }
+            card.onclick = () => tocarRitmo(idx); 
+            if (isCustom) { card.oncontextmenu = (e) => { e.preventDefault(); contextTargetId = customId; mostrarMenuContexto(e.clientX, e.clientY); }; }
+            return card;
+        }
+
+        // --- MANIPULAÇÃO DE RITMOS CUSTOMIZADOS (ADICIONAR/EDITAR) ---
+        function abrirModalAdicionar() { idEdicao = null; document.getElementById('modalTitle').innerText = "Novo Ritmo"; document.getElementById('inputNome').value = ""; document.getElementById('previewCapa').src = ""; document.getElementById('previewCapa').classList.add('hidden'); document.getElementById('fileCapa').value = ""; document.getElementById('fileAudio').value = ""; document.getElementById('labelAudio').innerText = "Selecionar Áudio de Loop"; document.getElementById('labelCapa').innerText = "Selecionar imagem"; document.getElementById('modalRitmo').classList.remove('hidden'); document.getElementById('modalRitmo').classList.add('flex'); }
+        function fecharModal() { document.getElementById('modalRitmo').classList.add('hidden'); document.getElementById('modalRitmo').classList.remove('flex'); }
+        function previewImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewCapa').src = e.target.result; document.getElementById('previewCapa').classList.remove('hidden'); document.getElementById('labelCapa').innerText = ""; }; reader.readAsDataURL(input.files[0]); } }
+        function handleAudioSelect(input) { if (input.files && input.files[0]) document.getElementById('labelAudio').innerText = input.files[0].name; }
+        
+        function salvarRitmo() {
+            const nome = document.getElementById('inputNome').value; if(!nome) return;
+            const inputAudio = document.getElementById('fileAudio'), inputCapa = document.getElementById('fileCapa');
+            let audioPathFinal = null, capaPathFinal = null; const timestamp = Date.now();
+            
+            if (inputAudio.files.length > 0) { const ext = path.extname(inputAudio.files[0].path); audioPathFinal = path.join(dirs.userAudio, `audio_${timestamp}${ext}`); fs.copyFileSync(inputAudio.files[0].path, audioPathFinal); }
+            if (inputCapa.files.length > 0) { const ext = path.extname(inputCapa.files[0].path); capaPathFinal = path.join(dirs.userImages, `capa_${timestamp}${ext}`); fs.copyFileSync(inputCapa.files[0].path, capaPathFinal); }
+
+            if (idEdicao !== null) { 
+                let ritmo = ritmosCustomizados[idEdicao]; ritmo.nome = nome; 
+                if (capaPathFinal) { if (ritmo.capa && fs.existsSync(ritmo.capa)) fs.unlinkSync(ritmo.capa); ritmo.capa = capaPathFinal; } 
+                if (audioPathFinal) { if (ritmo.audio && fs.existsSync(ritmo.audio)) fs.unlinkSync(ritmo.audio); ritmo.audio = audioPathFinal; } 
+            } else { 
+                if (!audioPathFinal) return; // Obriga a ter áudio na criação nova
+                ritmosCustomizados.push({ nome: nome, audio: audioPathFinal, capa: capaPathFinal || '' }); 
+            }
+            salvarDados(); fecharModal(); carregarBiblioteca();
+        }
+
+        function mostrarMenuContexto(x, y) { const menu = document.getElementById('contextMenu'); if(x + 176 > window.innerWidth) x -= 176; menu.style.left = `${x}px`; menu.style.top = `${y}px`; menu.classList.remove('hidden'); }
+        
+        function iniciarEdicao() { 
+            idEdicao = contextTargetId; const ritmo = ritmosCustomizados[idEdicao]; 
+            document.getElementById('modalTitle').innerText = "Editar Ritmo"; document.getElementById('inputNome').value = ritmo.nome; 
+            if(ritmo.capa && fs.existsSync(ritmo.capa)) { document.getElementById('previewCapa').src = `file://${ritmo.capa}`; document.getElementById('previewCapa').classList.remove('hidden'); document.getElementById('labelCapa').innerText = ""; } else { document.getElementById('previewCapa').classList.add('hidden'); document.getElementById('previewCapa').src = ""; document.getElementById('labelCapa').innerText = "Clique para alterar"; } 
+            document.getElementById('labelAudio').innerText = ritmo.audio ? path.basename(ritmo.audio) : "Novo Áudio"; 
+            document.getElementById('fileCapa').value = ""; document.getElementById('fileAudio').value = ""; 
+            document.getElementById('contextMenu').classList.add('hidden'); document.getElementById('modalRitmo').classList.remove('hidden'); document.getElementById('modalRitmo').classList.add('flex'); 
+        }
+        
+        function excluirRitmo() { 
+            let ritmo = ritmosCustomizados[contextTargetId]; 
+            if (ritmo.capa && fs.existsSync(ritmo.capa)) fs.unlinkSync(ritmo.capa); 
+            if (ritmo.audio && fs.existsSync(ritmo.audio)) fs.unlinkSync(ritmo.audio); 
+            ritmosCustomizados.splice(contextTargetId, 1); 
+            salvarDados(); document.getElementById('contextMenu').classList.add('hidden'); carregarBiblioteca(); hardStop(); 
+        }
+
+        // --- EVENTOS E CLEANUP ---
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.repeat) return;
+            
+            if (listeningKeyAction) { 
+                e.preventDefault(); settings.keyboard[listeningKeyAction] = e.code; 
+                salvarConfiguracoes(); cancelarMapeamento(); return; 
+            }
+            
+            for (let a in settings.keyboard) {
+                if (e.code === settings.keyboard[a] || (e.key === '+' && settings.keyboard[a] === 'Equal') || (e.key === '-' && settings.keyboard[a] === 'Minus')) {
+                    e.preventDefault();
+                    if (a === 'playStop') togglePlayStop(); 
+                    else if (a === 'prev') navegar(-1); 
+                    else if (a === 'next') navegar(1); 
+                    else if (a === 'speedUp') passoVelocidade(0.01); 
+                    else if (a === 'speedDown') passoVelocidade(-0.01); 
+                    else if (a === 'volUp') passoVolumeUI(0.05); 
+                    else if (a === 'volDown') passoVolumeUI(-0.05); 
+                    else if (a === 'panic') hardStop();
+                    break;
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => { 
+            if (!e.target.closest('#volWrapper')) document.getElementById('volumeContainer').classList.add('hidden'); 
+            if (!e.target.closest('#contextMenu') && !e.target.closest('[id^="card-"]')) document.getElementById('contextMenu').classList.add('hidden'); 
+        });
+
+        function toggleVolume() { document.getElementById('volumeContainer').classList.toggle('hidden'); }
+        function fecharApp() { try { if(audioCtx) audioCtx.close(); } catch(e){} ipcRenderer.send('fechar-janela'); }
+        function minimizarApp() { ipcRenderer.send('minimizar-janela'); }
+        function maximizarApp() { ipcRenderer.send('maximizar-janela'); }
+
+        const lp = findFileSafe(dirs.logo, 'logo'); if (lp) document.getElementById('logoContainer').innerHTML = `<img src="file://${lp}" class="w-full h-full object-contain drop-shadow-2xl">`;
+        carregarBiblioteca();
+    </script>
+</body>
+</html>

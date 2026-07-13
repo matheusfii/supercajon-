@@ -1,0 +1,7 @@
+{
+  "name": "super-cajon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Player mobile e offline de loops profissionais de cajón",
+  "scripts": { "start": "npx serve .", "check": "node --check app.js && node --check sw.js" }
+}

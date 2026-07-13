@@ -1,0 +1,273 @@
+.rhythm-card {
+  min-height: 136px;
+}
+
+.rhythm-card.active {
+  background: #10151a;
+  box-shadow: 0 0 0 1px #cce82f55, 0 10px 28px #0007;
+}
+
+.rhythm-card .cover,
+.rhythm-card .card-shade {
+  position: absolute;
+  inset: 0;
+}
+
+.rhythm-card .cover {
+  background-position: center;
+  background-size: cover;
+  transition: transform .35s ease;
+}
+
+.rhythm-card:active .cover {
+  transform: scale(1.04);
+}
+
+.rhythm-card .card-shade {
+  background: linear-gradient(180deg, #05070918 20%, #080b0fd9 75%, #080b0ff5 100%);
+}
+
+.rhythm-card.active .card-shade {
+  background: linear-gradient(180deg, #05070905 15%, #080b0fc9 72%, #11160af2 100%);
+}
+
+.rhythm-card .card-copy {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  bottom: 14px;
+  left: 15px;
+}
+
+.rhythm-card strong {
+  margin-top: 0;
+  text-shadow: 0 2px 8px #000;
+}
+
+.rhythm-card small {
+  color: #c1c7ca;
+  font-size: 9px;
+  font-weight: 700;
+  text-shadow: 0 1px 5px #000;
+}
+
+.rhythm-card.active small {
+  color: var(--accent);
+}
+
+.rhythm-card .number {
+  z-index: 2;
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 1px 5px #000;
+}
+
+.rhythm-card .bars {
+  z-index: 2;
+}
+
+.bars i {
+  background: #fff;
+  box-shadow: 0 1px 4px #000;
+}
+
+.brand {
+  width: 74px;
+  height: 70px;
+}
+
+.brand img {
+  display: block;
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px #0009);
+}
+
+.splash {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, #3a2a10 0, #11100d 28%, #080b0f 64%);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+.splash.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-glow {
+  position: absolute;
+  width: min(82vw, 420px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #ffbd2824;
+  filter: blur(48px);
+  animation: splash-pulse 1.6s ease-in-out infinite alternate;
+}
+
+.splash img {
+  position: relative;
+  width: min(72vw, 330px);
+  height: auto;
+  filter: drop-shadow(0 22px 42px #000c);
+  animation: splash-arrive .65s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.splash p {
+  position: relative;
+  margin: 18px 0 0;
+  color: #aab0b4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.splash-loader {
+  position: relative;
+  width: 104px;
+  height: 3px;
+  margin-top: 30px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #ffffff17;
+}
+
+.splash-loader span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffb300, #fff2ac);
+  animation: splash-load 1s ease-in-out infinite;
+}
+
+@keyframes splash-arrive {
+  from { opacity: 0; transform: scale(.84) translateY(16px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes splash-pulse {
+  to { transform: scale(1.12); opacity: .7; }
+}
+
+@keyframes splash-load {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(245%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash img,
+  .splash-glow,
+  .splash-loader span { animation: none; }
+}
+
+/* Identidade cromática do logo: preto, branco, amarelo, cinza e azul pontual */
+body {
+  background: radial-gradient(circle at 50% -10%, #292929 0, transparent 34rem), #070707;
+}
+
+.icon-button,
+.skip-button {
+  border-color: #343434;
+  background: linear-gradient(145deg, #202020, #111);
+  color: #f1f1f1;
+}
+
+.icon-button:active,
+.skip-button:active {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.eyebrow span {
+  background: var(--blue);
+  box-shadow: 0 0 14px var(--blue);
+}
+
+.subtitle {
+  color: #999;
+}
+
+.wave i {
+  background: #464646;
+}
+
+.tempo-card {
+  border-color: #363636;
+  background: linear-gradient(145deg, #202020, #111);
+  box-shadow: 0 20px 60px #0009;
+}
+
+.tempo-button {
+  border-color: #3b3b3b;
+  background: linear-gradient(145deg, #292929, #181818);
+  color: #fff;
+}
+
+.tempo-button:active {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.play-button {
+  color: #080808;
+  background: linear-gradient(145deg, #ffd84c, #f2a900);
+  box-shadow: 0 0 0 8px #ffc21c18, 0 12px 34px #ffc21c38;
+}
+
+.section-title > span {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.rhythm-card {
+  border-color: #333;
+  background: #111;
+}
+
+.rhythm-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px #ffc21c55, 0 10px 28px #000a;
+}
+
+.rhythm-card.active .card-shade {
+  background: linear-gradient(180deg, #05050508 15%, #090909c7 72%, #211900f2 100%);
+}
+
+.sheet {
+  border-color: #3a3a3a;
+  background: #171717;
+}
+
+.sheet-title button {
+  background: #303030;
+  color: #fff;
+}
+
+.setting-row small,
+.offline-note {
+  color: #999;
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+.setting-row input[type="range"] {
+  accent-color: var(--blue);
+}
+
+.splash {
+  background: radial-gradient(circle at 50% 42%, #4a3100 0, #17130b 28%, #070707 66%);
+}

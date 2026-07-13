@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080b0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Super Cajon</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="covers.css" />
+</head>
+<body>
+  <div class="splash" id="splash" role="status" aria-label="Carregando Super Cajon">
+    <div class="splash-glow"></div>
+    <img src="public/brand/logo-super-cajon.png" alt="Super Cajon" />
+    <div class="splash-loader" aria-hidden="true"><span></span></div>
+    <p>Cajón pronto para tocar</p>
+  </div>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Super Cajon">
+        <img src="public/brand/logo-super-cajon.png" alt="" />
+      </a>
+      <button class="icon-button" id="openSettings" aria-label="Abrir configurações">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2m4 0h10M14 4v6M8 14v6"/></svg>
+      </button>
+    </header>
+
+    <section class="hero" aria-labelledby="currentRhythm">
+      <p class="eyebrow"><span></span> AGORA SELECIONADO</p>
+      <h1 id="currentRhythm">Arrocha</h1>
+      <p class="subtitle" id="currentDescription">Balanço envolvente e marcante</p>
+      <div class="wave" aria-hidden="true" id="waveform"></div>
+    </section>
+
+    <section class="tempo-card" aria-label="Controle de velocidade">
+      <button class="tempo-button" id="tempoDown" aria-label="Diminuir BPM">−</button>
+      <div class="tempo-value">
+        <span id="bpmValue">92</span>
+        <small>BPM</small>
+      </div>
+      <button class="tempo-button" id="tempoUp" aria-label="Aumentar BPM">+</button>
+      <input id="tempoRange" type="range" min="70" max="160" value="92" aria-label="BPM" />
+    </section>
+
+    <section class="transport" aria-label="Controles de reprodução">
+      <button class="skip-button" id="previous" aria-label="Ritmo anterior">
+        <svg viewBox="0 0 24 24"><path d="M6 5v14M19 6l-9 6 9 6V6z"/></svg>
+      </button>
+      <button class="play-button" id="play" aria-label="Reproduzir">
+        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7V5z"/></svg>
+        <svg class="pause-icon" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM14 5h4v14h-4z"/></svg>
+      </button>
+      <button class="skip-button" id="next" aria-label="Próximo ritmo">
+        <svg viewBox="0 0 24 24"><path d="M18 5v14M5 6l9 6-9 6V6z"/></svg>
+      </button>
+    </section>
+
+    <section class="library" aria-labelledby="libraryTitle">
+      <div class="section-title">
+        <div><p>SEUS RITMOS</p><h2 id="libraryTitle">Escolha e toque</h2></div>
+        <span id="rhythmCount">13 loops</span>
+      </div>
+      <div class="rhythm-grid" id="rhythmGrid"></div>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title"><h2>Ajustes</h2><button value="close" aria-label="Fechar">×</button></div>
+      <label class="setting-row"><span><b>Volume</b><small>Saída geral dos loops</small></span><input id="volume" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+      <label class="setting-row"><span><b>Parada suave</b><small>Fade de 600 ms ao pausar</small></span><input id="fadeToggle" type="checkbox" checked></label>
+      <p class="offline-note"><span>✓</span> Todos os ritmos ficam disponíveis offline.</p>
+    </form>
+  </dialog>
+  <audio id="player" loop preload="auto"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
