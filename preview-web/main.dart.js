@@ -75453,7 +75453,7 @@ $0(){A.l1(this.b,!1).rN(null)
 A.w3(B.lK,this.a.ga5x(),t.H)},
 $S:0}
 A.adM.prototype={
-$0(){return this.a.le("https://play.google.com/store/account/subscriptions?sku=super_cajon_pro&package=com.matheusfonseca.super_cajon","N\xe3o foi poss\xedvel abrir a Google Play.")},
+$0(){return this.a.le("https://play.google.com/store/account/subscriptions?sku=super_cajon_pro&package=supercajon.app","N\xe3o foi poss\xedvel abrir a Google Play.")},
 $S:0}
 A.adN.prototype={
 $0(){return this.a.le(u.D,"N\xe3o foi poss\xedvel abrir os termos de uso.")},
