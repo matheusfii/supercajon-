@@ -33,6 +33,8 @@ node_modules/
 .pub/
 /build/
 /coverage/
+/.artifacts/
+/release/
 
 # Symbolication related
 app.*.symbols

@@ -1,10 +1,11 @@
 # Capturas da Google Play
 
-As capturas `04-paywall.png` e `05-ajustes.png` pertencem ao modelo antigo de
-compra única e **não podem ser publicadas** na Google Play.
+As capturas foram regeneradas com o modelo de assinatura anual do produto
+`super_cajon_pro`. `04-paywall.png` e `05-ajustes.png` exibem o preço anual,
+a renovação automática, as opções de restauração e gerenciamento e os links
+para os documentos legais.
 
-Regere ambas depois de configurar os dados legais e o produto
-`super_cajon_pro`. Não publique capturas que digam "compra única", "sem
+Ao gerar novas capturas, não publique textos que digam "compra única", "sem
 assinatura" ou "totalmente offline".
 
 O fluxo de captura está em `tooling/capture_play_store.mjs` e o preview pode ser
