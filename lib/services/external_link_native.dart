@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-const _channel = MethodChannel('com.matheusfonseca.super_cajon/external_link');
+const _channel = MethodChannel('supercajon.app/external_link');
 
 Future<bool> openExternalLink(String url) async {
   try {

@@ -1,4 +1,4 @@
-package com.matheusfonseca.super_cajon
+package supercajon.app
 
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +11,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "com.matheusfonseca.super_cajon/external_link",
+            "supercajon.app/external_link",
         ).setMethodCallHandler { call, result ->
             if (call.method != "openUrl") {
                 result.notImplemented()

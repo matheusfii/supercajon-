@@ -14,7 +14,7 @@ if (releaseSigningConfigured) {
 }
 
 android {
-    namespace = "com.matheusfonseca.super_cajon"
+    namespace = "supercajon.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.matheusfonseca.super_cajon"
+        applicationId = "supercajon.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

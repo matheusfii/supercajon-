@@ -18,7 +18,7 @@ marketing.
 
 ## Configuração no Play Console
 
-1. Crie o app com o package name `com.matheusfonseca.super_cajon`.
+1. Crie o app com o package name `supercajon.app`.
 2. Habilite Play App Signing e cadastre a upload key de produção.
 3. Em **Monetização > Assinaturas**, crie `super_cajon_pro`.
 4. Crie o plano-base `anual`, autorrenovável, com período de 1 ano.

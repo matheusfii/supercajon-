@@ -11,5 +11,5 @@ class LegalConfig {
 
   static const subscriptionManagementUrl =
       'https://play.google.com/store/account/subscriptions'
-      '?sku=super_cajon_pro&package=com.matheusfonseca.super_cajon';
+      '?sku=super_cajon_pro&package=supercajon.app';
 }
